@@ -1,27 +1,50 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import Home from '../views/Home.vue'
+import Manager from '../pages/Manager/Layout.vue'
+import store from '../store'
+import { Toast } from 'vant'
+import {getToken} from '../utils/auth'
 
 Vue.use(VueRouter)
 
 const routes = [
   {
     path: '/',
-    name: 'home',
-    component: Home
+    name: 'Manager',
+    redirect:'/home',
+    component: Manager,
+    beforeEnter:(to,from,next)=>{
+      let token=getToken();
+        if(token){
+          store.dispatch('user/getUserInfo',token)
+          .then(()=>{
+            next();
+          })
+        }else{
+          Toast('Token失效')
+          next({path:'/login'})
+        }
+    },
+    children:[{
+      path:'home',
+      component:() => import('../pages/Manager/Home.vue')
+    },{
+      path:'order',
+      component:() => import('../pages/Manager/Order.vue')
+    },{
+      path:'user',
+      component:() => import('../pages/Manager/User.vue')
+    }]
   },
   {
-    path: '/about',
-    name: 'about',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/About.vue')
+    path: '/login',
+    name: 'login',
+    component: () => import('../pages/Login.vue')
   }
 ]
 
 const router = new VueRouter({
-  mode: 'history',
+  // mode: 'history',
   base: process.env.BASE_URL,
   routes
 })
